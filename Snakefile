@@ -132,6 +132,23 @@ rule ref_cds:
         '> {output}'
 
 
+# generic index rule
+rule index_vcf:
+    input:
+        Path(outdir, '{folder}', '{file}.vcf')
+    output:
+        gz = Path(outdir, '{folder}', '{file}.vcf.gz'),
+        tbi = Path(outdir, '{folder}', '{file}.vcf.gz.tbi')
+    log:
+        Path(logdir, 'index_vcf.{folder}_{file}.log'
+    singularity:
+        samtools
+    shell:
+        'bgzip -c {input} > {output.gz} 2> {log} '
+        '; '
+        'tabix -p vcf {output.gz} 2>> {log}'
+
+
 # experimental, extract HVR from BB18 and run transindel on hvr chr
 map_data = 'data/merged.bam'
 csd_region = 'data/csd_region_1kb.txt'
