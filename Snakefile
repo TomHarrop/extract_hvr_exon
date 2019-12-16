@@ -17,6 +17,7 @@ biopython = 'shub://TomHarrop/singularity-containers:biopython_1.73'
 clustalo = 'shub://TomHarrop/singularity-containers:clustalo_1.2.4'
 samtools = 'shub://TomHarrop/singularity-containers:samtools_1.9'       # fixme
 transindel = 'shub://TomHarrop/variant-utils:transindel_7098bd6'
+freebayes = 'shub://TomHarrop/singularity-containers:freebayes_1.2.0'
 
 # main
 
@@ -137,36 +138,38 @@ csd_region = 'data/csd_region_1kb.txt'
 
 rule transindel_target:
     input:
-        bam = Path(outdir, 'extract_csd_region/csd.bam')
+        Path(outdir, 'extract_csd_region', 'freebayes.vcf')
 
-rule transindel_call:
+rule transindel_call_freebayes:
     input:
-        Path(outdir, 'transindel/{indiv}.bam')
+        bam = Path(outdir, 'transindel', 'csd.bam'),
+        fa = ref,
+        regions = csd_region
     output:
-        Path(outdir, 'transindel/{indiv}.indel.vcf')
-    params:
-        prefix = lambda wildcards:
-            Path(outdir, f'transindel/{wildcards.indiv}')
+        Path(outdir, 'extract_csd_region', 'freebayes.vcf')
     log:
-        Path(logdir, 'transindel_call.{indiv}.log')
+        Path(logdir, 'transindel_call_freebayes.log')
     singularity:
-        transindel
+        freebayes
     shell:
-        'transIndel_call.py  '
-        '-i {input} '
-        '-o {params.prefix} '
-        '&> {log}'
+        'freebayes '
+        '--region  "$(cat {input.regions})" '
+        '--ploidy 1 '
+        '-f {input.fa} '
+        '{input.bam} '
+        '> {output} '
+        '2> {log}'
 
 rule transindel_build:
     input:
-        bam = Path(outdir, 'extract_hvr_chr/{indiv}.bam'),
-        bai = Path(outdir, 'extract_hvr_chr/{indiv}.bam.bai')
+        bam = Path(outdir, 'extract_csd_region/csd.bam'),
+        bai = Path(outdir, 'extract_csd_region/csd.bam.bai')
     output:
-        Path(outdir, 'transindel/{indiv}.bam')
+        Path(outdir, 'transindel/csd.bam')
     params:
         max_del = int(1e3)
     log:
-        Path(logdir, 'transindel_build.{indiv}.log')
+        Path(logdir, 'transindel_build.log')
     singularity:
         transindel
     shell:
