@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 from pathlib import Path
-from cyvcf2 import VCF
+import pysam
 import multiprocessing
 
 # globals
@@ -26,8 +26,14 @@ r = 'shub://TomHarrop/r-containers:r_3.6.1'
 
 # main
 
+# parse individuals from the BAM
+h = pysam.AlignmentFile(map_data, 'rb').header
+all_indivs = sorted(set(x['ID'] for x in h.to_dict()['RG']))
+
 # parse individuals from the VCF
-all_indivs = sorted(set(VCF(calls).samples))
+# all_indivs = sorted(set(VCF(calls).samples))
+
+# generate the reference allele
 all_indivs.append('ref')
 
 rule target:
